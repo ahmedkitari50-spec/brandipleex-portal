@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brandiplex Portal Premium</title>
+    
+    <!-- Tailwind CSS pour le style -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & React DOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel pour compiler le JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Configuration Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { slate: { 950: '#040813', 955: '#02040a' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+    </style>
+</head>
+<body class="bg-[#040813] text-slate-200 antialiased h-screen overflow-hidden">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- 1. ICÔNES (Remplacement de Lucide-React pour version autonome) ---
+        const Icon = ({ children, className="w-5 h-5", viewBox="0 0 24 24" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox={viewBox} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const Icons = {
+            Dashboard: ({className}) => <Icon className={className}><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></Icon>,
+            Calendar: ({className}) => <Icon className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Icon>,
+            FileText: ({className}) => <Icon className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></Icon>,
+            CheckSquare: ({className}) => <Icon className={className}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></Icon>,
+            Users: ({className}) => <Icon className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>,
+            Bell: ({className}) => <Icon className={className}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></Icon>,
+            Plus: ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>,
+            Trash: ({className}) => <Icon className={className}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>,
+            Sparkles: ({className}) => <Icon className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></Icon>,
+            Upload: ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></Icon>,
+            Check: ({className}) => <Icon className={className}><polyline points="20 6 9 17 4 12"/></Icon>,
+            X: ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>,
+            Menu: ({className}) => <Icon className={className}><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></Icon>
+        };
+
+        // --- 2. DONNÉES DE L'ÉQUIPE ---
+        const TEAM = [
+            { id: 't1', name: 'Lamyae', role: 'Leader & Stratégie', color: 'bg-indigo-500', initials: 'L' },
+            { id: 't2', name: 'Mohamed', role: 'Scripts & Tournage', color: 'bg-emerald-500', initials: 'M' },
+            { id: 't6', name: 'Fatima', role: 'Scripts & Créative', color: 'bg-rose-500', initials: 'F' },
+            { id: 't3', name: 'Youssef', role: 'Montage & BTS', color: 'bg-amber-500', initials: 'Y' },
+            { id: 't4', name: 'Ahmed', role: 'Management & Direction', color: 'bg-pink-500', initials: 'A' },
+            { id: 't5', name: 'Zakaria', role: 'Coordination & Relance', color: 'bg-purple-500', initials: 'Z' }
+        ];
+
+        // Génération par défaut des 30 jours
+        const defaultCalendar = Array.from({length: 30}, (_, i) => ({
+            day: i + 1,
+            title: `Reel #${i + 1} - Concept original`,
+            hook: `Accroche captivante pour les 3 premières secondes...`,
+            body: `Explication claire de l'offre ou de la valeur ajoutée...`,
+            cta: `Abonnez-vous à Brandiplex pour plus d'astuces !`,
+            assignee: i % 2 === 0 ? 'Fatima' : 'Mohamed',
+            completed: false
+        }));
+
+        // --- 3. APPLICATION PRINCIPALE ---
+        function BrandiplexPortal() {
+            // État général
+            const [currentUserProfile, setCurrentUserProfile] = React.useState(TEAM[4]); // Par défaut Ahmed
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+            
+            // États avec Sauvegarde Locale (localStorage) pour simuler le Cloud
+            const [tasks, setTasks] = React.useState(() => JSON.parse(localStorage.getItem('bp_tasks')) || []);
+            const [documents, setDocuments] = React.useState(() => JSON.parse(localStorage.getItem('bp_docs')) || []);
+            const [calendarDays, setCalendarDays] = React.useState(() => JSON.parse(localStorage.getItem('bp_calendar')) || defaultCalendar);
+            
+            const [newTaskTitle, setNewTaskTitle] = React.useState('');
+            const [isDragging, setIsDragging] = React.useState(false);
+            const fileInputRef = React.useRef(null);
+
+            // Modal Script
+            const [selectedDay, setSelectedDay] = React.useState(null);
+            const [editedScript, setEditedScript] = React.useState({});
+
+            // Sauvegarder automatiquement lors des changements
+            React.useEffect(() => { localStorage.setItem('bp_tasks', JSON.stringify(tasks)); }, [tasks]);
+            React.useEffect(() => { localStorage.setItem('bp_docs', JSON.stringify(documents)); }, [documents]);
+            React.useEffect(() => { localStorage.setItem('bp_calendar', JSON.stringify(calendarDays)); }, [calendarDays]);
+
+            // Calculs Stats
+            const completedTasks = tasks.filter(t => t.completed).length;
+            const progressPercent = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+            const completedDays = calendarDays.filter(d => d.completed).length;
+            const daysProgressPercent = Math.min(100, Math.round((completedDays / 30) * 100));
+
+            // Actions Tâches
+            const addTask = (e) => {
+                e.preventDefault();
+                if (!newTaskTitle.trim()) return;
+                setTasks([{ id: Date.now(), title: newTaskTitle, assignee: currentUserProfile.name, completed: false, date: new Date().toISOString() }, ...tasks]);
+                setNewTaskTitle('');
+            };
+            const toggleTask = (id) => setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+            const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id));
+
+            // Actions Documents
+            const handleFileUpload = (e) => {
+                const files = e.target.files || e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    setDocuments([{
+                        id: Date.now(), title: file.name, uploader: currentUserProfile.name, 
+                        date: new Date().toISOString(), size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+                    }, ...documents]);
+                }
+                setIsDragging(false);
+            };
+            const deleteDocument = (id) => setDocuments(documents.filter(d => d.id !== id));
+
+            // Actions Calendrier
+            const openDayEditModal = (dayData) => {
+                setSelectedDay(dayData);
+                setEditedScript({ ...dayData });
+            };
+            const saveDayChanges = () => {
+                setCalendarDays(calendarDays.map(d => d.day === selectedDay.day ? editedScript : d));
+                setSelectedDay(null);
+            };
+            const quickToggleDayCompleted = (dayNumber, e) => {
+                e.stopPropagation();
+                setCalendarDays(calendarDays.map(d => d.day === dayNumber ? { ...d, completed: !d.completed } : d));
+            };
+
+            const formatDate = (dateString) => new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(dateString));
+
+            // Logo partagé
+            const BrandLogo = ({ className = "w-10 h-10 mr-3" }) => (
+                <div className={`relative ${className} group flex-shrink-0`}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-cyan-500 rounded-xl blur opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <img 
+                        src="WhatsApp Image 2026-05-31 at 12.15.47.jpeg" 
+                        alt="Logo" 
+                        className="relative w-full h-full rounded-xl object-cover border border-white/20 shadow-lg"
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230b0f19' rx='12'/%3E%3Ctext x='50' y='55' font-family='sans-serif' font-size='38' font-weight='black' fill='%23ec4899' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E";
+                        }}
+                    />
+                </div>
+            );
+
+            // Contenu Sidebar
+            const SidebarContent = () => (
+                <div className="flex flex-col h-full bg-slate-950 text-slate-300">
+                    <div className="h-24 flex items-center px-6 border-b border-slate-800/60 bg-slate-950/40">
+                        <BrandLogo className="w-12 h-12 mr-4" />
+                        <div className="flex flex-col">
+                            <span className="text-xl font-black tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-400 leading-none">BRANDIPLEX</span>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-widest mt-1.5 font-semibold">Workspace</span>
+                        </div>
+                    </div>
+                    
+                    <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                        {[
+                            { id: 'dashboard', icon: Icons.Dashboard, label: "Vue d'ensemble", color: 'pink-500' },
+                            { id: 'calendar', icon: Icons.Calendar, label: "Calendrier 30J", color: 'pink-500', badge: `${completedDays}/30` },
+                            { id: 'documents', icon: Icons.FileText, label: "Fichiers & PDF", color: 'cyan-400' },
+                            { id: 'tasks', icon: Icons.CheckSquare, label: "Tâches d'Équipe", color: 'cyan-400', badge: tasks.filter(t=>!t.completed).length || null }
+                        ].map(item => (
+                            <button 
+                                key={item.id}
+                                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${activeTab === item.id ? `bg-gradient-to-r from-${item.color.split('-')[0]}-500/10 to-transparent border-l-2 border-${item.color} text-white` : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}
+                            >
+                                <div className="flex items-center">
+                                    <item.icon className={`w-5 h-5 mr-3 ${activeTab === item.id ? `text-${item.color}` : ''}`} /> {item.label}
+                                </div>
+                                {item.badge && <span className={`bg-${item.color.split('-')[0]}-500/20 text-${item.color} text-xs px-2 py-0.5 rounded-full border border-${item.color.split('-')[0]}-500/30`}>{item.badge}</span>}
+                            </button>
+                        ))}
+                    </nav>
+
+                    <div className="p-4 border-t border-slate-800/60 bg-slate-950/40">
+                        <div className="text-[10px] uppercase text-slate-500 font-bold mb-4 tracking-widest flex items-center px-2">
+                            <Icons.Users className="w-3.5 h-3.5 mr-2" /> Membres Équipe
+                        </div>
+                        <div className="space-y-2.5 max-h-48 overflow-y-auto custom-scrollbar px-2">
+                            {TEAM.map(member => (
+                                <div key={member.id} className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <div className={`w-8 h-8 rounded-lg ${member.color} flex items-center justify-center text-xs font-bold text-white mr-3 shadow-md border border-white/10`}>{member.initials}</div>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-semibold text-slate-200">{member.name}</span>
+                                            <span className="text-[10px] text-slate-500">{member.role}</span>
+                                        </div>
+                                    </div>
+                                    {currentUserProfile.id === member.id && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]"></span>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="flex h-screen bg-[#040813] text-slate-200 overflow-hidden relative">
+                    
+                    {/* Décorations Floues (Glows) d'arrière-plan */}
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[40%] bg-pink-600/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[40%] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+
+                    {/* Sidebar Desktop */}
+                    <aside className="w-64 bg-slate-950 border-r border-slate-800/60 flex-col hidden md:flex h-full shrink-0 z-20 relative">
+                        <SidebarContent />
+                    </aside>
+
+                    {/* Sidebar Mobile Menu */}
+                    {isMobileMenuOpen && (
+                        <div className="fixed inset-0 z-50 flex md:hidden bg-slate-950/90 backdrop-blur-sm">
+                            <div className="w-64 bg-slate-950 border-r border-slate-800/80 h-full relative">
+                                <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-6 right-4 text-slate-400 hover:text-white bg-slate-900 p-2 rounded-lg">
+                                    <Icons.X className="w-4 h-4" />
+                                </button>
+                                <SidebarContent />
+                            </div>
+                            <div className="flex-1" onClick={() => setIsMobileMenuOpen(false)}></div>
+                        </div>
+                    )}
+
+                    {/* Main Section */}
+                    <main className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
+                        {/* Header */}
+                        <header className="h-20 bg-slate-950/70 backdrop-blur-md border-b border-slate-800/60 flex items-center justify-between px-6 lg:px-8 shrink-0">
+                            <div className="flex items-center">
+                                <button onClick={() => setIsMobileMenuOpen(true)} className="mr-4 text-slate-400 hover:text-white p-2 bg-slate-900 rounded-lg md:hidden">
+                                    <Icons.Menu className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center md:hidden">
+                                    <BrandLogo className="w-10 h-10 mr-3" />
+                                </div>
+                            </div>
+                            
+                            <div className="hidden md:flex items-center text-cyan-400 text-xs font-semibold bg-cyan-950/30 px-4 py-2.5 rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.05)]">
+                                <div className="w-2 h-2 rounded-full bg-cyan-400 mr-2.5 shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-pulse"></div>
+                                Sauvegarde Locale Active (Autonome)
+                            </div>
+
+                            <div className="flex items-center space-x-5">
+                                <div className="h-6 w-px bg-slate-800/60 hidden sm:block"></div>
+                                <div className="flex items-center">
+                                    <div className="text-right mr-3 hidden sm:block">
+                                        <div className="text-xs font-bold text-white">{currentUserProfile.name}</div>
+                                        <div className="text-[10px] text-slate-500">{currentUserProfile.role}</div>
+                                    </div>
+                                    <div className={`w-10 h-10 rounded-xl ${currentUserProfile.color} flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(236,72,153,0.2)] border border-white/10`}>
+                                        {currentUserProfile.initials}
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Contenu Actif */}
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+                            <div className="max-w-6xl mx-auto w-full h-full space-y-6">
+                                
+                                {activeTab === 'dashboard' && (
+                                    <>
+                                        {/* Bannière Dashboard */}
+                                        <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 rounded-3xl p-6 border border-slate-800 shadow-2xl relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-80 h-80 bg-pink-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+                                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                <div>
+                                                    <span className="bg-pink-500/20 text-pink-400 border border-pink-500/30 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-full flex items-center w-max mb-3">
+                                                        <Icons.Sparkles className="w-3.5 h-3.5 mr-1" /> Espace Privé Brandiplex
+                                                    </span>
+                                                    <h1 className="text-2xl md:text-3xl font-black text-white">Salut, {currentUserProfile.name} ! 👋</h1>
+                                                    <p className="text-slate-400 text-sm mt-1">L'espace créatif de l'agence. Planification, scripts et fichiers.</p>
+                                                </div>
+                                                <div className="flex items-center space-x-2 shrink-0 bg-slate-900 border border-slate-800 p-2 rounded-xl">
+                                                    <span className="text-xs text-slate-500 ml-2">Agir en tant que :</span>
+                                                    <select 
+                                                        value={currentUserProfile.id} 
+                                                        onChange={(e) => setCurrentUserProfile(TEAM.find(t => t.id === e.target.value))}
+                                                        className="bg-slate-950 text-xs text-slate-200 border border-slate-700/60 rounded-lg px-2 py-1.5 focus:outline-none focus:border-pink-500 cursor-pointer outline-none"
+                                                    >
+                                                        {TEAM.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Stats */}
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 relative overflow-hidden group">
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-transparent"></div>
+                                                <h3 className="text-slate-400 text-sm font-medium mb-1">Objectif Followers</h3>
+                                                <div className="text-3xl font-black text-white group-hover:text-pink-400 transition-colors">10 000</div>
+                                                <div className="mt-4 w-full bg-slate-800 rounded-full h-2">
+                                                    <div className="bg-gradient-to-r from-pink-500 to-pink-400 h-2 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.5)]" style={{ width: '45%' }}></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 relative overflow-hidden group">
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-transparent"></div>
+                                                <h3 className="text-slate-400 text-sm font-medium mb-1">Progression Calendrier</h3>
+                                                <div className="text-3xl font-black text-white group-hover:text-cyan-400 transition-colors">
+                                                    {completedDays} <span className="text-lg text-slate-600 font-normal">/ 30</span>
+                                                </div>
+                                                <div className="mt-4 w-full bg-slate-800 rounded-full h-2">
+                                                    <div className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-2 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)] transition-all duration-500" style={{ width: `${daysProgressPercent}%` }}></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 relative overflow-hidden group">
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-transparent"></div>
+                                                <h3 className="text-slate-400 text-sm font-medium mb-1">Tâches Accomplies</h3>
+                                                <div className="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">{progressPercent}%</div>
+                                                <div className="mt-4 w-full bg-slate-800 rounded-full h-2">
+                                                    <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" style={{ width: `${progressPercent}%` }}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {activeTab === 'calendar' && (
+                                    <div className="bg-slate-900/80 rounded-2xl shadow-xl border border-slate-800 h-full flex flex-col">
+                                        <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                            <div>
+                                                <h2 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-400 flex items-center">
+                                                    <Icons.Sparkles className="w-5 h-5 mr-2 text-pink-500 animate-pulse" /> PLAN DE PRODUCTION (30 JOURS)
+                                                </h2>
+                                                <p className="text-slate-400 text-xs mt-1">Conçu spécialement pour Fatima & Mohamed. Rédigez, attribuez et validez chaque script.</p>
+                                            </div>
+                                            <div className="bg-slate-950 border border-slate-800 px-4 py-2.5 rounded-xl flex items-center">
+                                                <span className="text-pink-400 font-extrabold text-lg mr-2">{completedDays}</span>
+                                                <span className="text-slate-500 text-xs">/ 30 Reels Terminés</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                            {calendarDays.map((day) => (
+                                                <div
+                                                    key={day.day}
+                                                    onClick={() => openDayEditModal(day)}
+                                                    className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col bg-slate-950 hover:bg-slate-900/60 ${
+                                                    day.completed ? 'border-pink-500/40 bg-pink-950/5 shadow-[0_0_15px_rgba(236,72,153,0.1)]' : 'border-slate-800/80 hover:border-cyan-500/40'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <span className={`text-xs font-black px-2 py-0.5 rounded-md ${day.completed ? 'bg-pink-500/20 text-pink-400' : 'bg-slate-900 text-slate-400'}`}>Jour {day.day}</span>
+                                                        <button onClick={(e) => quickToggleDayCompleted(day.day, e)} className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${day.completed ? 'bg-pink-500 border-pink-500 text-white' : 'border-slate-700 hover:border-pink-500/50'}`}>
+                                                            {day.completed && <Icons.Check className="w-3.5 h-3.5" />}
+                                                        </button>
+                                                    </div>
+                                                    <h4 className="text-xs font-bold text-slate-200 line-clamp-2 min-h-[2rem] mb-2">{day.title}</h4>
+                                                    <div className="mt-auto pt-3 border-t border-slate-900 flex items-center justify-between">
+                                                        <span className="text-[10px] text-slate-500">Scripteur:</span>
+                                                        <span className="text-[10px] font-bold text-slate-300 bg-slate-900 px-2 py-0.5 rounded">{day.assignee}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'documents' && (
+                                    <div className="bg-slate-900/80 rounded-2xl shadow-xl border border-slate-800 h-full flex flex-col">
+                                        <div className="p-6 border-b border-slate-800">
+                                            <h2 className="text-xl font-bold text-white mb-2">Documents & Rapports</h2>
+                                            
+                                            <div className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer mt-4 ${isDragging ? 'border-cyan-500 bg-cyan-900/10' : 'border-slate-800 hover:border-slate-600 bg-slate-950/50'}`}
+                                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                                onDragLeave={() => setIsDragging(false)}
+                                                onDrop={(e) => { e.preventDefault(); handleFileUpload(e); }}
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <Icons.Upload className={`w-12 h-12 mx-auto mb-3 transition-colors ${isDragging ? 'text-cyan-400' : 'text-slate-500'}`} />
+                                                <p className="text-slate-200 font-semibold text-sm mb-1">Déposez votre fichier ici (PDF, Word...)</p>
+                                                <p className="text-slate-500 text-xs">Uploadez en tant que <strong>{currentUserProfile.name}</strong></p>
+                                                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                            {documents.map((doc) => (
+                                                <div key={doc.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col hover:border-cyan-500/30 transition-all group">
+                                                    <div className="flex justify-between mb-4">
+                                                        <div className="bg-pink-500/10 text-pink-500 p-2.5 rounded-lg border border-pink-500/20"><Icons.FileText className="w-6 h-6" /></div>
+                                                        <button onClick={() => deleteDocument(doc.id)} className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 p-2 rounded-lg border border-slate-700"><Icons.Trash className="w-4 h-4" /></button>
+                                                    </div>
+                                                    <h4 className="font-bold text-slate-200 text-xs mb-1 truncate">{doc.title}</h4>
+                                                    <div className="mt-auto pt-4 flex justify-between text-[10px] text-slate-500">
+                                                        <span>Partagé par : <strong>{doc.uploader}</strong></span>
+                                                        <span className="bg-slate-900 px-2 py-0.5 rounded">{doc.size}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {documents.length === 0 && <div className="col-span-full text-center py-10 text-slate-500 text-xs">Aucun document partagé.</div>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeTab === 'tasks' && (
+                                    <div className="bg-slate-900/80 rounded-2xl shadow-xl border border-slate-800 h-full flex flex-col">
+                                        <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between gap-6">
+                                            <div>
+                                                <h2 className="text-xl font-bold text-white">Tableau des Tâches</h2>
+                                                <p className="text-slate-400 text-xs mt-1">{completedTasks} de {tasks.length} tâches résolues</p>
+                                            </div>
+                                            <form onSubmit={addTask} className="flex shadow-lg">
+                                                <input type="text" placeholder="Nouvelle tâche..." value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} className="bg-slate-950 border border-slate-700 text-white rounded-l-lg px-4 py-2.5 text-xs focus:outline-none focus:border-cyan-400 w-full sm:w-64" />
+                                                <button type="submit" className="bg-gradient-to-r from-pink-600 to-cyan-600 text-white px-5 rounded-r-lg"><Icons.Plus className="w-5 h-5" /></button>
+                                            </form>
+                                        </div>
+
+                                        <div className="p-6 space-y-3">
+                                            {tasks.map(task => (
+                                                <div key={task.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${task.completed ? 'bg-slate-950/40 border-slate-800' : 'bg-slate-900 border-slate-700/60'}`}>
+                                                    <div className="flex items-center cursor-pointer flex-1" onClick={() => toggleTask(task.id)}>
+                                                        <div className={`w-6 h-6 rounded flex items-center justify-center mr-4 flex-shrink-0 border ${task.completed ? 'bg-cyan-500 border-cyan-500 text-slate-950' : 'border-slate-600 text-transparent'}`}>
+                                                            <Icons.Check className="w-4 h-4" />
+                                                        </div>
+                                                        <div>
+                                                            <span className={`font-semibold text-xs ${task.completed ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{task.title}</span>
+                                                            <div className="text-[10px] mt-1 text-slate-500 flex items-center">
+                                                                <span className="w-2 h-2 rounded-full bg-pink-500 mr-2"></span> Créé par : <strong className="ml-1 text-slate-400">{task.assignee}</strong>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => deleteTask(task.id)} className="text-slate-500 hover:text-red-400 p-2.5 rounded-lg bg-slate-950 border border-slate-800/80"><Icons.Trash className="w-4 h-4" /></button>
+                                                </div>
+                                            ))}
+                                            {tasks.length === 0 && <div className="text-center py-10 text-slate-500 text-xs">Aucune tâche.</div>}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* MODAL EDITION SCRIPT CALENDRIER */}
+                    {selectedDay && (
+                        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+                                <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                                    <div>
+                                        <span className="text-xs text-pink-400 uppercase font-black">Planificateur d'Étape</span>
+                                        <h3 className="text-lg font-black text-white">Script du Jour {selectedDay.day}</h3>
+                                    </div>
+                                    <button onClick={() => setSelectedDay(null)} className="text-slate-400 hover:text-white bg-slate-950 p-2 rounded-lg"><Icons.X className="w-4 h-4" /></button>
+                                </div>
+                                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Titre de l'épisode / Concept</label>
+                                        <input type="text" value={editedScript.title} onChange={(e) => setEditedScript({...editedScript, title: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:border-pink-500 outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Scripteur / Assigné</label>
+                                        <select value={editedScript.assignee} onChange={(e) => setEditedScript({...editedScript, assignee: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:border-pink-500 outline-none">
+                                            {TEAM.map(m => <option key={m.id} value={m.name}>{m.name} ({m.role})</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Accroche (0 - 3s) 🎯</label>
+                                        <textarea rows="2" value={editedScript.hook} onChange={(e) => setEditedScript({...editedScript, hook: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:border-pink-500 outline-none resize-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Corps du Reel 📝</label>
+                                        <textarea rows="4" value={editedScript.body} onChange={(e) => setEditedScript({...editedScript, body: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:border-pink-500 outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 font-bold uppercase mb-1">Appel à l'Action (CTA) 🚀</label>
+                                        <input type="text" value={editedScript.cta} onChange={(e) => setEditedScript({...editedScript, cta: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-xs text-white focus:border-pink-500 outline-none" />
+                                    </div>
+                                </div>
+                                <div className="p-6 border-t border-slate-800 bg-slate-950/40 flex justify-end space-x-3">
+                                    <button onClick={() => setSelectedDay(null)} className="px-4 py-2 rounded-lg text-xs text-slate-400 hover:text-white">Annuler</button>
+                                    <button onClick={saveDayChanges} className="bg-gradient-to-r from-pink-600 to-cyan-600 text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-[0_0_15px_rgba(236,72,153,0.3)] flex items-center">
+                                        <Icons.Sparkles className="w-3.5 h-3.5 mr-2" /> Enregistrer le Script
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<BrandiplexPortal />);
+    </script>
+</body>
+</html>
